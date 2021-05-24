@@ -16,7 +16,7 @@ li	$v0, 12			# syscall 12 -> read char
 		# LEITURA STRING BINARIO (Ex: 00000000000000000000000011001000)
 		li 	$v0, 8
 		la	$a0, entrada_bin
-		li	$a1, 32
+		li	$a1, 33
 		syscall
 		# Print "\n"
 		li	$v0, 4
@@ -67,12 +67,9 @@ li	$v0, 12			# syscall 12 -> read char
 	
 		# LEITURA WORD DECIMAL (Ex: 200)
 		li 	$v0, 5
-		la	$a0, entrada_dec
-		syscall	
-		# Print "\n"
-		li	$v0, 4
-		la	$a0, pulo_linha
-		syscall	
+		syscall
+		la	$t0, entrada_dec
+		sw	$v0, 0($t0)
 	
 		# LEITURA BASE SAIDA
 		li	$v0, 12			# syscall 12 -> read char
@@ -110,6 +107,8 @@ li	$v0, 12			# syscall 12 -> read char
 		la	$a2, hexa_order
 		jal 	decimalToHexadecimal
 		
+		j 	A2
+		
 		
 		
 	A1:
@@ -119,7 +118,7 @@ li	$v0, 12			# syscall 12 -> read char
 		# LEITURA STRING HEXADECIMAL (Ex: 000000c8)
 		li 	$v0, 8
 		la	$a0, entrada_hex
-		li	$a1, 8
+		li	$a1, 9
 		syscall	
 		# Print "\n"
 		li	$v0, 4
@@ -161,7 +160,8 @@ li	$v0, 12			# syscall 12 -> read char
 		la	$a0, entrada_bin	# BINARIO -> DECIMAL
 		la	$a1, saida_dec
 		jal	binaryToDecimal
-
+		
+		j	A2
 
 	
 	# IMPRESSAO DOS VALORES
@@ -173,7 +173,8 @@ li	$v0, 12			# syscall 12 -> read char
 	
 	## IMPRESSAO VALORES ENTRADA_*
 	li	$v0, 1
-	la	$a0, entrada_dec
+	la	$t0, entrada_dec
+	lw	$a0, 0($t0)
 	syscall
 	# Print "\n"
 	li	$v0, 4
@@ -198,7 +199,8 @@ li	$v0, 12			# syscall 12 -> read char
 	
 	## IMPRSSAO VALORES SAIDA_*
 	li	$v0, 1
-	la	$a0, saida_dec
+	la	$t0, saida_dec
+	lw	$a0, 0($t0)
 	syscall
 	# Print "\n"
 	li	$v0, 4

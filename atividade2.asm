@@ -8,8 +8,8 @@
 # 
 # potencia: Retorna a $a0 elevado a $a1
 # binaryToDecimal: $a0: endereco para .space 33 bytes (binario); $a1: endereco para .word (decimal)
-# decimalToHexadecimal: $a0: endereco para .word (decimal); $a1: endereco para .space 9 (hexadecimal)
-# hexadecimalToBinary: $a0: endereco para .space 9 (hexadecimal); $a1: endereco para .space 33 (binario)
+# decimalToHexadecimal: $a0: endereco para .word (decimal); $a1: endereco para .space 9 (hexadecimal); $a2: endereco para hexa_order
+# hexadecimalToBinario: $a0: endereco para .space 9 (hexadecimal); $a1: endereco para .space 33 (binario); $a2: endereco para hexa_order; $a3: endereco para binario_order
 # ====================
 # NOMENCLATURA DE LABELS:
 # 
@@ -22,18 +22,18 @@
 	.align 	2								# Alinhar variaveis à word
 	entrada_dec:	.word 0							# Variavel para entrada de numero decimal
 	.align 	2
-	entrada_hex:	.ascii "0000000c8\0"					# Variavel para entrada de numero hexadecimal
+	entrada_hex:	.ascii "000000000 \0"					# Variavel para entrada de numero hexadecimal
 	.align 	2
-	entrada_bin:	.ascii "00000000000000000000000000000000\0"	# Variavel para entrada de numero binario
+	entrada_bin:	.ascii "00000000000000000000000000000000 \0"		# Variavel para entrada de numero binario
 	.align 	2
 	base_entrada:	.space 2						# Espaco para armazenar a base da entrada
 	
 	.align 	2
 	saida_dec:	.word 0							# Variavel para saida de numero decimal
 	.align 	2
-	saida_hex:	.ascii "00000000\0"					# Variavel para saida de numero hexadecimal
+	saida_hex:	.ascii "00000000 \0"					# Variavel para saida de numero hexadecimal
 	.align 	2
-	saida_bin:	.ascii "00000000000000000000000000000000\0"	# Variavel para saida de numero binario
+	saida_bin:	.ascii "00000000000000000000000000000000 \0"	# Variavel para saida de numero binario
 	.align 	2
 	base_saida:	.space 2						# Espaco para armazenar a base da saida
 	
@@ -67,7 +67,7 @@ main:
 		# LEITURA STRING BINARIO (Ex: 00000000000000000000000011001000)
 		li 	$v0, 8
 		la	$a0, entrada_bin
-		li	$a1, 32
+		li	$a1, 33
 		syscall
 		# Print "\n"
 		li	$v0, 4
@@ -118,12 +118,9 @@ main:
 	
 		# LEITURA WORD DECIMAL (Ex: 200)
 		li 	$v0, 5
-		la	$a0, entrada_dec
-		syscall	
-		# Print "\n"
-		li	$v0, 4
-		la	$a0, pulo_linha
-		syscall	
+		syscall
+		la	$t0, entrada_dec
+		sw	$v0, 0($t0)
 	
 		# LEITURA BASE SAIDA
 		li	$v0, 12			# syscall 12 -> read char
@@ -161,6 +158,8 @@ main:
 		la	$a2, hexa_order
 		jal 	decimalToHexadecimal
 		
+		j 	A2
+		
 		
 		
 	A1:
@@ -170,7 +169,7 @@ main:
 		# LEITURA STRING HEXADECIMAL (Ex: 000000c8)
 		li 	$v0, 8
 		la	$a0, entrada_hex
-		li	$a1, 8
+		li	$a1, 9
 		syscall	
 		# Print "\n"
 		li	$v0, 4
@@ -212,7 +211,8 @@ main:
 		la	$a0, entrada_bin	# BINARIO -> DECIMAL
 		la	$a1, saida_dec
 		jal	binaryToDecimal
-
+		
+		j	A2
 
 	
 	# IMPRESSAO DOS VALORES
@@ -224,7 +224,8 @@ main:
 	
 	## IMPRESSAO VALORES ENTRADA_*
 	li	$v0, 1
-	la	$a0, entrada_dec
+	la	$t0, entrada_dec
+	lw	$a0, 0($t0)
 	syscall
 	# Print "\n"
 	li	$v0, 4
@@ -249,7 +250,8 @@ main:
 	
 	## IMPRSSAO VALORES SAIDA_*
 	li	$v0, 1
-	la	$a0, saida_dec
+	la	$t0, saida_dec
+	lw	$a0, 0($t0)
 	syscall
 	# Print "\n"
 	li	$v0, 4
@@ -276,6 +278,7 @@ main:
 	# Exit
 	li 	$v0, 10
 	syscall
+
 
 ## PROCEDIMENTOS ##
 

@@ -1,14 +1,18 @@
-li 	$v0, 5
+# Read binary
+	li 	$v0, 8
+	la	$a0, entrada_bin
+	li	$a1, 33
 	syscall
 	
-	la	$t0, entrada_dec
-	sw	$v0, 0($t0)
+	# binary to decimal
+	la	$a0, entrada_bin
+	la	$a1, saida_dec
+	jal 	binaryToDecimal
 	
-	la	$a0, entrada_dec
+	la	$a0, saida_dec
 	la	$a1, saida_hex
 	la	$a2, hexa_order
-	
-	jal decimalToHexadecimal
+	jal 	decimalToHexadecimal
 	
 	# Print "\n"
 	li	$v0, 4
