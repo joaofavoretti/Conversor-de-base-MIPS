@@ -229,7 +229,7 @@ main:
 		## IMPRESSAO VALORES ENTRADA
 		C0:
 		bne	$s2, 68, C1		# if base_entrada != 'D' (68) then C1
-		li	$v0, 1			# Impressao entrada decimal
+		li	$v0, 36			# Impressao entrada decimal como unsigned
 		la	$t0, entrada_dec
 		lw	$a0, 0($t0)
 		syscall
@@ -258,7 +258,7 @@ main:
 	syscall
 	
 		bne	$s1, 68, D1		# if base_entrada != 'D' (68) then C1
-		li	$v0, 1			# Impressao saida decimal
+		li	$v0, 36			# Impressao saida decimal como unsigned
 		la	$t0, saida_dec
 		lw	$a0, 0($t0)
 		syscall
