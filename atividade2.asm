@@ -23,8 +23,10 @@
 	entrada_dec:	.word 0							# Variavel para entrada de numero decimal
 	.align 	2
 	entrada_hex:	.ascii "000000000 \0"					# Variavel para entrada de numero hexadecimal
+	padding0:	.space 4
 	.align 	2
 	entrada_bin:	.ascii "00000000000000000000000000000000 \0"		# Variavel para entrada de numero binario
+	padding1:	.space 4
 	.align 	2
 	base_entrada:	.space 2						# Espaco para armazenar a base da entrada
 	
@@ -32,8 +34,10 @@
 	saida_dec:	.word 0							# Variavel para saida de numero decimal
 	.align 	2
 	saida_hex:	.ascii "00000000 \0"					# Variavel para saida de numero hexadecimal
+	padding2:	.space 4
 	.align 	2
-	saida_bin:	.ascii "00000000000000000000000000000000 \0"	# Variavel para saida de numero binario
+	saida_bin:	.ascii "00000000000000000000000000000000 \0"		# Variavel para saida de numero binario
+	padding3:	.space 4
 	.align 	2
 	base_saida:	.space 2						# Espaco para armazenar a base da saida
 	
@@ -59,9 +63,9 @@ main:
 	syscall
 	
 	la	$t0, base_entrada	# $t0 (&base_entrada)
-	lw	$s0, 0($t0)		# $s0 (base_entrada[0])
+	lw	$s2, 0($t0)		# $s2 (base_entrada[0])
 	
-	bne	$s0, 66, A0		# if base_entrada[0] != 'B' (66) then A0
+	bne	$s2, 66, A0		# if base_entrada[0] != 'B' (66) then A0
 	# ENTRADA BINARIO
 	
 		# LEITURA STRING BINARIO (Ex: 00000000000000000000000011001000)
@@ -97,7 +101,7 @@ main:
 		j 	A2			# JUMP IMPRESSAO
 		
 		B0:
-		bne 	$s1, 72, A2		# if base_saida[0] != 'H' (72) then B0
+		bne 	$s1, 72, E0		# if base_saida[0] != 'H' (72) then E0
 		# BINARIO -> HEXADECIMAL
 		
 		la	$a0, entrada_bin	# BINARIO -> DECIMAL
@@ -113,7 +117,7 @@ main:
 	
 	
 	A0:
-	bne	$s0, 68, A1		# if base_entrada[0] != 'D' (68) then A1
+	bne	$s2, 68, A1		# if base_entrada[0] != 'D' (68) then A1
 	# ENTRADA DECIMAL
 	
 		# LEITURA WORD DECIMAL (Ex: 200)
@@ -138,11 +142,11 @@ main:
 		bne	$s1, 66, B1		# if base_saida[0] != 'B' (66) then B1
 		# DECIMAL -> BINARIO
 		la	$a0, entrada_dec	# DECIMAL -> HEXADECIMAL
-		la	$a1, entrada_hex
+		la	$a1, saida_hex
 		la	$a2, hexa_order
 		jal 	decimalToHexadecimal
 		
-		la	$a0, entrada_hex	# HEXADECIMAL -> BINARIO
+		la	$a0, saida_hex		# HEXADECIMAL -> BINARIO
 		la	$a1, saida_bin
 		la	$a2, hexa_order
 		la	$a3, binario_order
@@ -151,7 +155,7 @@ main:
 		j 	A2
 		
 		B1:
-		bne	$s1, 72, A2		# if base_saida[0] != 'H' (72) then A2
+		bne	$s1, 72, E0		# if base_saida[0] != 'H' (72) then E0
 		# DECIMAL -> HEXADECIMAL
 		la	$a0, entrada_dec	# DECIMAL -> HEXADECIMAL
 		la	$a1, saida_hex
@@ -163,7 +167,7 @@ main:
 		
 		
 	A1:
-	bne 	$s0, 72, A2		# if base_entrada[0] != 'H' (72) then A2
+	bne 	$s2, 72, A2		# if base_entrada[0] != 'H' (72) then A2
 	# ENTRADA HEXADECIMAL
 		
 		# LEITURA STRING HEXADECIMAL (Ex: 000000c8)
@@ -200,7 +204,7 @@ main:
 		j	A2
 		
 		B2:
-		bne	$s1, 68, A2		# if base_saida[0] != 'D' (68) then A2
+		bne	$s1, 68, E0		# if base_saida[0] != 'D' (68) then E0
 		# HEXADECIMAL -> DECIMAL
 		la	$a0, entrada_hex	# HEXADECIMAL -> BINARIO
 		la	$a1, entrada_bin
@@ -221,60 +225,60 @@ main:
 	li	$v0, 4
 	la	$a0, pulo_linha
 	syscall
-	
-	## IMPRESSAO VALORES ENTRADA_*
-	li	$v0, 1
-	la	$t0, entrada_dec
-	lw	$a0, 0($t0)
-	syscall
+		
+		## IMPRESSAO VALORES ENTRADA
+		C0:
+		bne	$s2, 68, C1		# if base_entrada != 'D' (68) then C1
+		li	$v0, 1			# Impressao entrada decimal
+		la	$t0, entrada_dec
+		lw	$a0, 0($t0)
+		syscall
+		j	D0
+		
+		C1:
+		bne	$s2, 66, C2		# if base_entrada != 'B' (66) then C2
+		li	$v0, 4			# Impressao entrada binario
+		la	$a0, entrada_bin
+		syscall
+		j	D0
+		
+		C2:
+		bne	$s2, 72, D0		# if base_entrada != 'H' (72) then D0
+		li	$v0, 4			# Impressao entrada hexadecimal
+		la	$a0, entrada_hex
+		syscall
+		j	D0
+
+		
+		## IMPRSSAO VALORES SAIDA
+		D0:
 	# Print "\n"
 	li	$v0, 4
 	la	$a0, pulo_linha
 	syscall
 	
-	li	$v0, 4
-	la	$a0, entrada_bin
-	syscall
-	# Print "\n"
-	li	$v0, 4
-	la	$a0, pulo_linha
-	syscall
-	
-	li	$v0, 4
-	la	$a0, entrada_hex
-	syscall
-	# Print "\n"
-	li	$v0, 4
-	la	$a0, pulo_linha
-	syscall
-	
-	## IMPRSSAO VALORES SAIDA_*
-	li	$v0, 1
-	la	$t0, saida_dec
-	lw	$a0, 0($t0)
-	syscall
-	# Print "\n"
-	li	$v0, 4
-	la	$a0, pulo_linha
-	syscall
-	
-	li	$v0, 4
-	la	$a0, saida_bin
-	syscall
-	# Print "\n"
-	li	$v0, 4
-	la	$a0, pulo_linha
-	syscall
-	
-	li	$v0, 4
-	la	$a0, saida_hex
-	syscall
-	# Print "\n"
-	li	$v0, 4
-	la	$a0, pulo_linha
-	syscall
-	
-	
+		bne	$s1, 68, D1		# if base_entrada != 'D' (68) then C1
+		li	$v0, 1			# Impressao saida decimal
+		la	$t0, saida_dec
+		lw	$a0, 0($t0)
+		syscall
+		j	E0
+		
+		D1:
+		bne	$s1, 66, D2		# if base_entrada != 'B' (66) then C1
+		li	$v0, 4			# Impressao saida binario
+		la	$a0, saida_bin
+		syscall
+		j	E0
+		
+		D2:
+		bne	$s1, 72, E0		# if base_entrada != 'H' (66) then C1
+		li	$v0, 4			# Impresao saida hexadecimal
+		la	$a0, saida_hex
+		syscall
+		j	E0
+
+	E0:
 	# Exit
 	li 	$v0, 10
 	syscall
@@ -529,6 +533,9 @@ hexadecimalToBinario:			## HEXADECIMAL TO BINARIO PROCEDURE ##
 		
 	addi	$sp, $sp, -32		# Alloc stack
 	
+	sw	$zero, 24($sp)
+	sw	$zero, 24($sp)
+
 	sw	$s1, 24($sp)		# Save $s1
 	sw	$s0, 20($sp)		# Save $s0
 	
