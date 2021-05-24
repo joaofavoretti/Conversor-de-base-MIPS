@@ -19,35 +19,43 @@
 
 ## SEGMENTO DE DATA
 .data
-	.align 	2				# Alinhar variaveis à word
-	entrada_dec:	.word 0			# Variavel para entrada de numero decimal
-	entrada_hex:	.asciiz "         "	# Variavel para entrada de numero hexadecimal
-	entrada_bin:	.space 64		# Variavel para entrada de numero binario
-	base_entrada:	.space 2		# Espaco para armazenar a base da entrada
+	.align 	2								# Alinhar variaveis à word
+	entrada_dec:	.word 0							# Variavel para entrada de numero decimal
+	.align 	2
+	entrada_hex:	.asciiz "0000000c8\000"					# Variavel para entrada de numero hexadecimal
+	.align 	2
+	entrada_bin:	.asciiz "00000000000000000000000000000000\000"		# Variavel para entrada de numero binario
+	.align 	2
+	base_entrada:	.space 2						# Espaco para armazenar a base da entrada
 	
-	saida_dec:	.word 0			# Variavel para saida de numero decimal
-	saida_hex:	.asciiz "         "	# Variavel para saida de numero hexadecimal
-	saida_bin:	.space 64		# Variavel para saida de numero binario
-	base_saida:	.space 2		# Espaco para armazenar a base da saida
+	.align 	2
+	saida_dec:	.word 0							# Variavel para saida de numero decimal
+	.align 	2
+	saida_hex:	.asciiz "         "					# Variavel para saida de numero hexadecimal
+	.align 	2
+	saida_bin:	.asciiz "00000000000000000000000000000000\000"		# Variavel para saida de numero binario
+	.align 	2
+	base_saida:	.space 2						# Espaco para armazenar a base da saida
 	
-	hexa_char:	.asciiz "0123456789abcdef"	# Caracteres Hexadecimais
+	.align 2
+	hexa_order:	.asciiz "0123456789abcdef"				# Caracteres Hexadecimais
+	.align 2
+	binario_order:	.asciiz "0000000100100011010001010110011110001001101010111100110111101111"
+				# 0000 0001 0010 0011 0100 0101 0110 0111 1000 1001 1010 1011 1100 1101 1110 1111
+	.align 	2
 	pulo_linha:	.asciiz	"\n"
 
 ## SEGMENTO DE CÓDIGO
 .text
 .globl main
 main:
-	li 	$v0, 5
-	syscall
 	
-	la	$t0, entrada_dec
-	sw	$v0, 0($t0)
+	la	$a0, entrada_hex
+	la	$a1, saida_bin
+	la	$a2, hexa_order
+	la	$a3, binario_order
 	
-	la	$a0, entrada_dec
-	la	$a1, saida_hex
-	la	$a2, hexa_char
-	
-	jal decimalToHexadecimal
+	jal hexadecimalToBinario
 	
 	# Print "\n"
 	li	$v0, 4
@@ -56,7 +64,7 @@ main:
 	
 	# Print Hexa string
 	li	$v0, 4
-	la	$a0, saida_hex
+	la	$a0, saida_bin
 	syscall
 	
 	# Exit
@@ -203,7 +211,7 @@ binaryToDecimal:			## BINARY TO DECIMAL PROCEDURE ##
 
 decimalToHexadecimal:			## DECIMAL TO HEXADECIMAL PROCEDURE ##
 					# $a0: endereco para .word (decimal)
-					# $a1: endereco para .space 9 bytes (binario)
+					# $a1: endereco para .space 9 bytes (hexadecimal)
 					# $a2: endereco para .asciiz com caracteres hexadecimais
 					# return void
 					#
@@ -279,15 +287,118 @@ decimalToHexadecimal:			## DECIMAL TO HEXADECIMAL PROCEDURE ##
 	jr $ra
 	
 		
-
+hexadecimalToBinario:			## HEXADECIMAL TO BINARIO PROCEDURE ##
+					# $a0: endereco para .space 9 bytes (hexadecimal)
+					# $a1: endereco para .space 33 bytes (binario)
+					# $a2: endereco para .asciiz com caracteres hexadecimais
+					# $a3: endereco para .asciiz com caracteres halfbyte binario
+					# return void
+					#
+					# Based code
+					# void hexaToBin(char *hexa, char *bin, char *charHexa, char *binOrder) {
+					#     int i, j;
+					#     for (i = 0; i < 9; i++) {
+					#         for (j = 0; j < 16; j++) {
+					#             if (hexa[i] == charHexa[j]) {
+					#                 strncpy(&bin[i * 4], &binOrder[j * 4], 4);
+					#             }
+					#         }
+					#     }
+					# }
+					# 
+					# STACK
+					# +-----------+
+					# | $s1       | + 28
+					# | $s0       | + 24
+					# | $a0(&hex) | + 20
+					# | $a1(&bin) | + 16
+					# | $a2(&hOd) | + 12
+					# | $a3(&bOd) | + 8
+					# | i         | + 4
+					# | j         | + 0
+					# +-----------+ $sp
 		
+	addi	$sp, $sp, -32		# Alloc stack
 	
+	sw	$s1, 24($sp)		# Save $s1
+	sw	$s0, 20($sp)		# Save $s0
 	
+	sw	$a0, 20($sp)		# Save arguments
+	sw	$a1, 16($sp)		# Save arguments
+	sw	$a2, 12($sp)		# Save arguments
+	sw	$a3, 8($sp)		# Save arguments
 	
+	sw	$zero, 4($sp)		# i = 0
+	L5: 	# for (int i = 0; i < 9; i++)
+	lw	$t0, 4($sp)		# $t0 (i)
+	bge 	$t0, 9, E_L5		# if i >= 9 then E_L5
 	
+	sw	$zero, 0($sp)		# j = 0
+	L6: 	# for (int j = 0; j < 16; j++)
+	lw	$t0, 0($sp)		# $t0 (j)
+	bge	$t0, 16, E_L6		# if j >= 16 then E_L6
 	
+		# if (hex[i] == hOd[j])
+	lw	$t0, 4($sp)		# $t0 (i)
+	lw	$t1, 20($sp)		# $t1 (&hex)
+	addu	$t1, $t1, $t0		# $t1 (&hex[i])
+	lb	$s0, 0($t1)		# $s0 (hex[i])
 	
+	lw	$t0, 0($sp)		# $t0 (j)
+	lw	$t1, 12($sp)		# $t1 (&hOr)
+	addu	$t1, $t1, $t0		# $t1 (&hOr[j]
+	lb	$s1, 0($t1)		# $s1 (hOr[j])
 	
+	bne	$s0, $s1, L7		# if hex[i] != hOr[j] then L7 (end loop j)
+		
+		# Copy value bOd to bin
+	lw	$t0, 4($sp)		# $t0 (i)
+	li	$t1, 4			# $t1 (4)
+	mult	$t0, $t1		# $t0 (i * 4)
+	mflo	$t0			# $t0 (i * 4)
+	
+	lw	$s0, 16($sp)		# $s0 (&bin)
+	addu	$s0, $s0, $t0		# $s0 (&bin[i * 4])
+	
+	lw	$t0, 0($sp)		# $t0 (j)
+	li	$t1, 4			# $t1 (4)
+	mult	$t0, $t1		# $t0 (j * 4)
+	mflo	$t0			# $t0 (j * 4)
+	
+	lw	$t1, 8($sp)		# $t1 (&bOr)
+	addu	$t1, $t1, $t0		# $t1 (&bOr[j * 4]
+	lw	$s1, 0($t1)		# $s1 (bOr[j * 4]
+	
+	sw	$s1, 0($s0)		# bin[i * 4] = binOrder[j * 4] (WORD)
+	
+	L7: 
+	lw	$t0, 0($sp)		# j = j + 1
+	addi	$t0, $t0, 1		# j = j + 1
+	sw	$t0, 0($sp)		# j = j + 1
+	
+	j	L6
+	
+	E_L6:
+	
+	lw	$t0, 4($sp)		# i = i + 1
+	addi	$t0, $t0, 1		# i = i + 1
+	sw	$t0, 4($sp)		# i = i + 1
+	
+	j	L5
+	
+	E_L5:
+	
+	lw	$s1, 24($sp)		# Load $s1
+	lw	$s0, 20($sp)		# Load $s0
+	
+	lw	$a0, 20($sp)		# Load arguments
+	lw	$a1, 16($sp)		# Load arguments
+	lw	$a2, 12($sp)		# Load arguments
+	lw	$a3, 8($sp)		# Load arguments
+	
+	addi	$sp, $sp, 32		# Dealloc stack
+	
+	jr	$ra
 	
 	
 	
