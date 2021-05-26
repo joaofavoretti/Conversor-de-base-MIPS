@@ -3,6 +3,7 @@
 # Nomes dos alunos:
 # João Pedro Favoretti (Nusp: 11316055)
 # Lucas Pilla Pimentel (Nusp: 10633328)
+# Rafael Corona (nUSP: 4769989)
 # ====================
 # TABELA DE PROCEDIMENTOS:
 # 
