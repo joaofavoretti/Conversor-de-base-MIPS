@@ -11,6 +11,9 @@
 # binaryToDecimal: $a0: endereco para .space 33 bytes (binario); $a1: endereco para .word (decimal)
 # decimalToHexadecimal: $a0: endereco para .word (decimal); $a1: endereco para .space 9 (hexadecimal); $a2: endereco para hexa_order
 # hexadecimalToBinario: $a0: endereco para .space 9 (hexadecimal); $a1: endereco para .space 33 (binario); $a2: endereco para hexa_order; $a3: endereco para binario_order
+#
+# Ja que só são feitas 3 funções pra conversão. A conversão geral é feita com uma combinação entre elas:
+# BINARIO -> DECIMAL -> HEXADECIMAL -> BINARIO
 # ====================
 # NOMENCLATURA DE LABELS:
 # 
@@ -20,6 +23,18 @@
 
 ## SEGMENTO DE DATA
 .data
+	# Variaveis para interação com usuário
+	mural_entrada_programa_1:	.asciiz "======================\n"
+	mural_entrada_programa_2:	.asciiz "||     CONVERSOR     ||\n"
+	mural_entrada_programa_3:	.asciiz "||   ASSEMBLY MIPS   ||\n"
+	mural_entrada_programa_4:	.asciiz "======================\n"
+	
+	exib_entrada:	.asciiz "Sua entrada: "
+	exib_base_entrada:	.asciiz "Base de entrada (B/D/H): "
+	exib_saida:	.asciiz "Conversao: "
+	exib_base_saida:	.asciiz "Base de saida (B/D/H): "
+	
+	# Variaveis para utilização no código
 	.align 	2								# Alinhar variaveis à word
 	entrada_dec:	.word 0							# Variavel para entrada de numero decimal
 	.align 	2
@@ -54,46 +69,93 @@
 .text
 .globl main
 main:
+	# IMPRESSÃO MURAL DE ENTRADA PROGRAMA:
+	li	$v0, 4
+	la	$a0, mural_entrada_programa_1
+	syscall
+	li	$v0, 4
+	la	$a0, mural_entrada_programa_2
+	syscall
+	li	$v0, 4
+	la	$a0, mural_entrada_programa_3
+	syscall
+	li	$v0, 4
+	la	$a0, mural_entrada_programa_4
+	syscall
+	
+
+	# Print "\n"
+	li	$v0, 4
+	la	$a0, pulo_linha
+	syscall
+	# Print "\n"
+	li	$v0, 4
+	la	$a0, pulo_linha
+	syscall
+
+	# IMPRESSAO TEXTO ANTES DE ENTRADA DA BASE
+	li	$v0, 4
+	la	$a0, exib_base_entrada	
+	syscall				
+
+	# LEITURA BASE
 	li	$v0, 12			# syscall 12 -> read char
 	syscall				# LEITURA BASE DE ENTRADA
 	la	$t0, base_entrada
 	sw	$v0, 0($t0)		# base_entrada[0] = char
+	
 	# Print "\n"
 	li	$v0, 4
 	la	$a0, pulo_linha
 	syscall
 	
+
+	# SEGMENTA O FLUXO DO PROGRAMA BASEADO NA BASE DE ENTRADA DIGITADA.
 	la	$t0, base_entrada	# $t0 (&base_entrada)
 	lw	$s2, 0($t0)		# $s2 (base_entrada[0])
-	
+
+
+	# ESCOLHA BASEADO NA BASE DE ENTRADA
 	bne	$s2, 66, A0		# if base_entrada[0] != 'B' (66) then A0
-	# ENTRADA BINARIO
-	
+	# CASO A BASE DE ENTRADA SEJA B (BINARIO)
+		# IMPRESSÃO DE TEXTO NA TELA ANTES DE LEITURA
+		li	$v0, 4
+		la	$a0, exib_entrada	# Impressão de texto informativo valor entrada
+		syscall				# Exibição de texto para guiar o usuario
+		
 		# LEITURA STRING BINARIO (Ex: 00000000000000000000000011001000)
 		li 	$v0, 8
 		la	$a0, entrada_bin
 		li	$a1, 33
-		syscall
+		syscall	
+		
 		# Print "\n"
 		li	$v0, 4
 		la	$a0, pulo_linha
-		syscall		
+		syscall	
+		
+		# IMPRESSÃO DE TEXTO NA TELA ANTES DE LEITURA
+		li	$v0, 4
+		la	$a0, exib_base_saida	# Impressão de informação sobre base entrada
+		syscall				# Exibição de texto informativo base saida
 	
 		# LEITURA BASE SAIDA
 		li	$v0, 12			# syscall 12 -> read char
 		syscall	
 		la	$t0, base_saida
 		sw	$v0, 0($t0)		# base_saida[0] = char
+
 		# Print "\n"
 		li	$v0, 4
 		la	$a0, pulo_linha
 		syscall		
 	
+		# DECISÃO DE CONVERSÃO BASEADO NA BASE DE SAIDA
 		la	$t0, base_saida		# $t0 (&base_saida)
 		lw	$s1, 0($t0)		# $s0 (base_saida[0])
-	
+		
 		bne	$s1, 68, B0		# if base_saida[0] != 'D' (68) then B0
-		# BINARIO -> DECIMAL
+		# CASO: BINARIO -> DECIMAL (BINARIO -> DECIMAL)
 		
 		la	$a0, entrada_bin
 		la	$a1, saida_dec
@@ -103,7 +165,7 @@ main:
 		
 		B0:
 		bne 	$s1, 72, E0		# if base_saida[0] != 'H' (72) then E0
-		# BINARIO -> HEXADECIMAL
+		# CASO: BINARIO -> HEXADECIMAL (BINARIO -> DECIMAL -> HEXADECIMAL)
 		
 		la	$a0, entrada_bin	# BINARIO -> DECIMAL
 		la	$a1, entrada_dec
@@ -119,29 +181,41 @@ main:
 	
 	A0:
 	bne	$s2, 68, A1		# if base_entrada[0] != 'D' (68) then A1
-	# ENTRADA DECIMAL
-	
+	# CASO A BASE DE ENTRADA SEJA D (DECIMAL)
+		# IMPRESSÃO DE TEXTO NA TELA ANTES DE LEITURA
+		li	$v0, 4
+		la	$a0, exib_entrada	# Impressão de texto informativo valor entrada
+		syscall				# Exibição de texto para guiar o usuario
+
 		# LEITURA WORD DECIMAL (Ex: 200)
 		li 	$v0, 5
 		syscall
 		la	$t0, entrada_dec
 		sw	$v0, 0($t0)
 	
+		# IMPRESSÃO DE TEXTO NA TELA ANTES DE LEITURA
+		li	$v0, 4
+		la	$a0, exib_base_saida	# Impressão de informação sobre base entrada
+		syscall				# Exibição de texto informativo base saida
+		
 		# LEITURA BASE SAIDA
 		li	$v0, 12			# syscall 12 -> read char
 		syscall				
 		la	$t0, base_saida
 		sw	$v0, 0($t0)		# base_saida[0] = char
+		
 		# Print "\n"
 		li	$v0, 4
 		la	$a0, pulo_linha
 		syscall	
-	
+		
+		# DECISÃO DE CONVERSÃO BASEADO NA BASE DE SAIDA
 		la	$t0, base_saida		# $t0 (&base_saida)
 		lw	$s1, 0($t0)		# $s0 (base_saida[0])
 		
 		bne	$s1, 66, B1		# if base_saida[0] != 'B' (66) then B1
-		# DECIMAL -> BINARIO
+		# CASO: DECIMAL -> BINARIO (DECIMAL -> HEXADECIMAL -> BINARIO)
+		
 		la	$a0, entrada_dec	# DECIMAL -> HEXADECIMAL
 		la	$a1, saida_hex
 		la	$a2, hexa_order
@@ -157,7 +231,8 @@ main:
 		
 		B1:
 		bne	$s1, 72, E0		# if base_saida[0] != 'H' (72) then E0
-		# DECIMAL -> HEXADECIMAL
+		# CASO: DECIMAL -> HEXADECIMAL (DECIMAL -> HEXADECIMAL)
+		
 		la	$a0, entrada_dec	# DECIMAL -> HEXADECIMAL
 		la	$a1, saida_hex
 		la	$a2, hexa_order
@@ -166,36 +241,50 @@ main:
 		j 	A2
 		
 		
-		
 	A1:
 	bne 	$s2, 72, A2		# if base_entrada[0] != 'H' (72) then A2
-	# ENTRADA HEXADECIMAL
+	# CASO A BASE DE ENTRADA SEJA H (HEXADECIMAL)
 		
+		# IMPRESSÃO DE TEXTO NA TELA ANTES DE LEITURA
+		li	$v0, 4
+		la	$a0, exib_entrada	# Impressão de texto informativo valor entrada
+		syscall				# Exibição de texto para guiar o usuario
+
 		# LEITURA STRING HEXADECIMAL (Ex: 000000c8)
 		li 	$v0, 8
 		la	$a0, entrada_hex
 		li	$a1, 9
 		syscall	
+		
 		# Print "\n"
 		li	$v0, 4
 		la	$a0, pulo_linha
 		syscall	
+		
+		# IMPRESSÃO DE TEXTO NA TELA ANTES DE LEITURA
+		li	$v0, 4
+		la	$a0, exib_base_saida	# Impressão de informação sobre base entrada
+		syscall				# Exibição de texto informativo base saida
 		
 		# LEITURA BASE SAIDA
 		li	$v0, 12			# syscall 12 -> read char
-		syscall	
+		syscall
+		
 		la	$t0, base_saida
 		sw	$v0, 0($t0)		# base_saida[0] = char
+		
 		# Print "\n"
 		li	$v0, 4
 		la	$a0, pulo_linha
 		syscall	
 		
+		# DECISÃO DE CONVERSÃO BASEADO NA BASE DE SAIDA
 		la	$t0, base_saida		# $t0 (&base_saida)
 		lw	$s1, 0($t0)		# $s0 (base_saida[0])
 		
 		bne	$s1, 66, B2		# if base_saida[0] != 'B' (66) then B2
-		# HEXADECIMAL -> BINARIO
+		# CASO: HEXADECIMAL -> BINARIO (HEXADECIMAL -> BINARIO)
+		
 		la	$a0, entrada_hex	# HEXADECIMAL -> BINARIO
 		la	$a1, saida_bin
 		la	$a2, hexa_order
@@ -206,7 +295,8 @@ main:
 		
 		B2:
 		bne	$s1, 68, E0		# if base_saida[0] != 'D' (68) then E0
-		# HEXADECIMAL -> DECIMAL
+		# CASO: HEXADECIMAL -> DECIMAL (HEXADECIMAL -> BINARIO -> DECIMAL)
+		
 		la	$a0, entrada_hex	# HEXADECIMAL -> BINARIO
 		la	$a1, entrada_bin
 		la	$a2, hexa_order
@@ -220,44 +310,15 @@ main:
 		j	A2
 
 	
-	# IMPRESSAO DOS VALORES
+	# IMPRESSAO DOS VALORES DE SAIDA
 	A2:
-	# Print "\n"
+	# IMPRESSÃO DE TEXTO NA TELA ANTES DA ESCRITA
 	li	$v0, 4
-	la	$a0, pulo_linha
-	syscall
-		
-		## IMPRESSAO VALORES ENTRADA
-		C0:
-		bne	$s2, 68, C1		# if base_entrada != 'D' (68) then C1
-		li	$v0, 36			# Impressao entrada decimal como unsigned
-		la	$t0, entrada_dec
-		lw	$a0, 0($t0)
-		syscall
-		j	D0
-		
-		C1:
-		bne	$s2, 66, C2		# if base_entrada != 'B' (66) then C2
-		li	$v0, 4			# Impressao entrada binario
-		la	$a0, entrada_bin
-		syscall
-		j	D0
-		
-		C2:
-		bne	$s2, 72, D0		# if base_entrada != 'H' (72) then D0
-		li	$v0, 4			# Impressao entrada hexadecimal
-		la	$a0, entrada_hex
-		syscall
-		j	D0
-
-		
-		## IMPRSSAO VALORES SAIDA
-		D0:
-	# Print "\n"
-	li	$v0, 4
-	la	$a0, pulo_linha
-	syscall
+	la	$a0, exib_saida			# Impressão de texto informativo valor convertido
+	syscall					# Exibição de texto para guiar o usuario
 	
+		# DECISÃO DE IMPRESSÃO BASEADO NO VALOR DA BASE SAIDA
+		# IMPRESSÃO DE DECIMAL CASO BASE SAIDA == D
 		bne	$s1, 68, D1		# if base_entrada != 'D' (68) then C1
 		li	$v0, 36			# Impressao saida decimal como unsigned
 		la	$t0, saida_dec
@@ -265,6 +326,7 @@ main:
 		syscall
 		j	E0
 		
+		# IMPRESSÃO DE BINARIO CASO BASE SAIDA == B
 		D1:
 		bne	$s1, 66, D2		# if base_entrada != 'B' (66) then C1
 		li	$v0, 4			# Impressao saida binario
@@ -272,13 +334,15 @@ main:
 		syscall
 		j	E0
 		
+		# IMPRESSÃO DE HEXADECIMAL CASO BASE SAIDA == H
 		D2:
 		bne	$s1, 72, E0		# if base_entrada != 'H' (66) then C1
 		li	$v0, 4			# Impresao saida hexadecimal
 		la	$a0, saida_hex
 		syscall
 		j	E0
-
+	
+	# SAIDA DO PROGRAMA
 	E0:
 	# Exit
 	li 	$v0, 10
